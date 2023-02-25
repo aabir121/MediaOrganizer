@@ -68,12 +68,12 @@
             this.lblProgress.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblProgress.BackColor = System.Drawing.Color.Transparent;
-            this.lblProgress.Location = new System.Drawing.Point(1474, 217);
+            this.lblProgress.Location = new System.Drawing.Point(1474, 138);
             this.lblProgress.Name = "lblProgress";
             this.lblProgress.Size = new System.Drawing.Size(139, 58);
             this.lblProgress.TabIndex = 4;
             this.lblProgress.Text = "0%";
-            this.lblProgress.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblProgress.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // txtLog
             // 
@@ -109,6 +109,7 @@
             this.Controls.Add(this.directoryChooserBtn);
             this.Name = "MainForm";
             this.Text = "Media Organizer";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.ResumeLayout(false);
             this.PerformLayout();
 

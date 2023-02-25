@@ -1,24 +1,22 @@
-﻿using System;
-using System.IO;
-using System.Drawing;
-using System.Linq;
-using System.Collections.Generic;
-using Microsoft.WindowsAPICodePack.Shell;
-using System.Text;
+﻿using MetadataExtractor;
+using MetadataExtractor.Formats.Exif;
+using MetadataExtractor.Formats.QuickTime;
 
 namespace MediaOrganizer
 {
     internal class FileOrganizer
     {
-        public static void OrganizeMediaFiles(string sourceDirectory, Action<int, string> progressCallback)
+        private static int imageFiles = 0;
+        private static int videoFiles = 0;
+        public static async Task OrganizeMediaFiles(string sourceDirectory, Action<int, string> progressCallback, CancellationToken cancellationToken)
         {
-            if (!Directory.Exists(sourceDirectory))
+            if (!System.IO.Directory.Exists(sourceDirectory))
             {
                 progressCallback(0, "Folder does not exist.");
                 return;
             }
 
-            List<string> files = Directory.EnumerateFiles(sourceDirectory, "*.*", SearchOption.AllDirectories)
+            List<string> files = System.IO.Directory.EnumerateFiles(sourceDirectory, "*.*", SearchOption.AllDirectories)
                 .ToList();
 
             int totalFiles = files.Count;
@@ -27,22 +25,44 @@ namespace MediaOrganizer
 
             foreach (string file in files)
             {
-                ProcessMediaFile(file, sourceDirectory, progressCallback, ref processedFiles, filesPerPercent);
+                ProcessMediaFile(file, sourceDirectory, progressCallback, ref processedFiles, filesPerPercent, cancellationToken);
             }
+
+            string logMessage = $"{Environment.NewLine}{Environment.NewLine}-------------------------------------------{Environment.NewLine}" +
+                $"Total Processed Files: {processedFiles}{Environment.NewLine}Image Files: {imageFiles}{Environment.NewLine}Video Files: {videoFiles}";
+            imageFiles = 0;
+            videoFiles = 0;
+            progressCallback(100, logMessage);
         }
 
-        private static void ProcessMediaFile(string file, string sourceDirectory, Action<int, string> progressCallback, ref int processedFiles, double filesPerPercent)
+        private static void ProcessMediaFile(string file, string sourceDirectory, Action<int, string> progressCallback, ref int processedFiles, double filesPerPercent, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                // Throw an OperationCanceledException
+                throw new OperationCanceledException(cancellationToken);
+            }
+
             string extension = Path.GetExtension(file);
             if (!IsSupportedFileType(extension))
             {
                 return;
             }
 
-            DateTime mediaDate = GetMediaDateFromExifOrFallback(file, extension);
+            if (IsImage(extension))
+            {
+                imageFiles++;
+            }
+
+            if (IsVideo(extension))
+            {
+                videoFiles++;
+            }
+
+            DateTime mediaDate = GetMediaDateFromExifOrFallback(file);
 
             string destinationDirectory = Path.Combine(sourceDirectory, mediaDate.ToString("yyyy"), mediaDate.ToString("MMMM"));
-            Directory.CreateDirectory(destinationDirectory);
+            System.IO.Directory.CreateDirectory(destinationDirectory);
 
             string destinationFile = Path.Combine(destinationDirectory, Path.GetFileName(file));
             if (File.Exists(destinationFile))
@@ -103,36 +123,33 @@ namespace MediaOrganizer
             }
         }
 
-        static DateTime GetMediaDateFromExifOrFallback(string file, string extension)
+        public static DateTime GetMediaDateFromExifOrFallback(string filePath)
         {
             try
             {
-                // Try to get the taken date from the EXIF metadata
-                using (var image = new Bitmap(file))
+                var directories = ImageMetadataReader.ReadMetadata(filePath);
+
+                // Try to get media creation date from QuickTime/MP4 metadata
+                var quickTimeDirectory = directories.OfType<QuickTimeMovieHeaderDirectory>().FirstOrDefault();
+                if (quickTimeDirectory != null && quickTimeDirectory.TryGetDateTime(QuickTimeMovieHeaderDirectory.TagCreated, out DateTime mediaDate))
                 {
-                    var propertyItem = image.GetPropertyItem(0x9003); // DateTimeOriginal tag
-                    var takenDate = new DateTime(
-                        int.Parse(Encoding.ASCII.GetString(propertyItem.Value, 0, 4)),
-                        int.Parse(Encoding.ASCII.GetString(propertyItem.Value, 5, 2)),
-                        int.Parse(Encoding.ASCII.GetString(propertyItem.Value, 8, 2)),
-                        int.Parse(Encoding.ASCII.GetString(propertyItem.Value, 11, 2)),
-                        int.Parse(Encoding.ASCII.GetString(propertyItem.Value, 14, 2)),
-                        int.Parse(Encoding.ASCII.GetString(propertyItem.Value, 17, 2)));
-                    return takenDate;
+                    return mediaDate;
                 }
+
+                // Try to get media creation date from Exif metadata
+                var exifSubIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
+                if (exifSubIfdDirectory != null && exifSubIfdDirectory.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out DateTime exifDate))
+                {
+                    return exifDate;
+                }
+
+                // Fallback to file creation date
+                return File.GetCreationTime(filePath);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Log the exception and fallback to the creation time
-                Console.WriteLine($"Error getting taken date from EXIF metadata for {file}: {ex.Message}");
-                var fileShellObject = ShellObject.FromParsingName(file);
-                var properties = fileShellObject?.Properties?.DefaultPropertyCollection?.Select(property => property);
-                var creationTimeProperty = properties?.FirstOrDefault(property => property.CanonicalName == "System.DateCreated");
-                if (creationTimeProperty != null && creationTimeProperty.ValueAsObject != null)
-                {
-                    return (DateTime)creationTimeProperty.ValueAsObject;
-                }
-                return File.GetCreationTime(file);
+                // Error occurred while reading metadata
+                return File.GetCreationTime(filePath);
             }
         }
     }
