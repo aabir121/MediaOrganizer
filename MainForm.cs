@@ -1,34 +1,42 @@
+using System;
+using System.Drawing;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
 namespace MediaOrganizer
 {
     public partial class MainForm : Form
     {
-        // Create a CancellationTokenSource to allow for cancelling the task
-        CancellationTokenSource cts = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cancellationTokenSource;
 
         public MainForm()
         {
             InitializeComponent();
+            _cancellationTokenSource = new CancellationTokenSource();
         }
 
-        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        private async void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // If the task is still running, cancel it
-            if (!cts.IsCancellationRequested)
+            if (_cancellationTokenSource.IsCancellationRequested)
             {
-                cts.Cancel();
+                return;
             }
+
+            _cancellationTokenSource.Cancel();
+            await Task.Delay(50);
         }
 
         private void directoryChooserBtn_Click(object sender, EventArgs e)
         {
-            using (var dialog = new FolderBrowserDialog())
+            var dialog = new FolderBrowserDialog
             {
-                dialog.Description = "Select a folder to organize media files";
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    sourceDirTxtBox.Text = dialog.SelectedPath;
-                    organizeBtn.Enabled = true;
-                }
+                Description = "Select a folder to organize media files"
+            };
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                sourceDirTxtBox.Text = dialog.SelectedPath;
+                organizeBtn.Enabled = true;
             }
         }
 
@@ -36,59 +44,80 @@ namespace MediaOrganizer
         {
             if (organizeBtn.Text == "Cancel")
             {
-                cts.Cancel();
-                resetUi();
+                _cancellationTokenSource.Cancel();
+                ResetUi();
                 return;
             }
 
             directoryChooserBtn.Enabled = false;
             txtLog.Text = "";
             organizeBtn.Text = "Cancel";
+            progressBar.Style = ProgressBarStyle.Continuous;
 
-            // Run the media organizer in a separate task to avoid blocking the UI thread
-            Task.Run(() => FileOrganizer.OrganizeMediaFiles(sourceDirTxtBox.Text, (percentage, message) =>
+            Task.Run(() => FileOrganizer.OrganizeMediaFiles(
+                sourceDirTxtBox.Text,
+                (percentage, message) => ReportProgress(percentage, message),
+                _cancellationTokenSource.Token))
+            .ContinueWith(task => HandleOrganizeMediaFilesCompletion(task), TaskScheduler.FromCurrentSynchronizationContext());
+        }
+
+        private void HandleOrganizeMediaFilesCompletion(Task task)
+        {
+            if (_cancellationTokenSource.IsCancellationRequested)
             {
-                // Update progress bar, label, and logs on the UI thread
-                this.Invoke(new Action(() =>
-                {
-                    ReportProgress(percentage, message);
-                }));
-            }, cts.Token)).ContinueWith(task =>
+                MessageBox.Show("Organizer was cancelled!");
+                ResetUi();
+            }
+            else if (task.IsFaulted)
             {
-                // Do something after the async operation is complete
-                if (cts.IsCancellationRequested)
-                {
-                    MessageBox.Show("Organizer was cancelled!");
-                    resetUi();
-                }
-                else
-                {
-                    MessageBox.Show("Media files organized!");
-                    organizeBtn.Text = "Start";
-                    directoryChooserBtn.Enabled = true;
-                }
-            }, TaskScheduler.FromCurrentSynchronizationContext());
+                MessageBox.Show($"An error occurred during the operation: {task.Exception.InnerException.Message}");
+                ResetUi();
+            }
+            else
+            {
+                MessageBox.Show("Media files organized!");
+                ResetUi();
+            }
         }
 
         private void ReportProgress(int percentage, string message)
         {
-            // Update the progress bar and label
-            progressBar.Value = percentage;
-            lblProgress.Text = $"{percentage}%";
+            progressBar.Invoke(new Action(() =>
+            {
+                progressBar.Value = percentage;
+                lblProgress.Text = $"{percentage}%";
+            }));
 
-            // Update the logs
-            txtLog.AppendText($"{message}{Environment.NewLine}");
-            txtLog.SelectionStart = txtLog.Text.Length;
-            txtLog.ScrollToCaret();
+            using (var graphics = progressBar.CreateGraphics())
+            {
+                var font = new Font("Arial", 10, FontStyle.Italic);
+                var brush = new SolidBrush(Color.Black);
+
+                var text = $"{percentage}%";
+                var textSize = graphics.MeasureString(text, font);
+
+                var x = (progressBar.Width / 2) - (textSize.Width / 2);
+                var y = (progressBar.Height / 2) - (textSize.Height / 2);
+
+                graphics.DrawString(text, font, brush, x, y);
+            }
+
+            txtLog.Invoke(new Action(() =>
+            {
+                txtLog.AppendText($"{message}{Environment.NewLine}");
+                txtLog.SelectionStart = txtLog.Text.Length;
+                txtLog.ScrollToCaret();
+            }));
         }
 
-        private void resetUi()
+        private void ResetUi()
         {
-            this.txtLog.Text = "";
-            this.organizeBtn.Text = "Start";
-            this.progressBar.Value = 0;
-            this.lblProgress.Text = "0%";
+            txtLog.Clear();
+            organizeBtn.Text = "Start";
+            lblProgress.Text = "0%";
             directoryChooserBtn.Enabled = true;
+            progressBar.Style = ProgressBarStyle.Blocks;
+            progressBar.Value = 0;
         }
     }
 }
