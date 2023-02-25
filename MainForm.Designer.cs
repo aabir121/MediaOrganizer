@@ -30,6 +30,10 @@
         {
             this.directoryChooserBtn = new System.Windows.Forms.Button();
             this.sourceDirTxtBox = new System.Windows.Forms.TextBox();
+            this.progressBar = new System.Windows.Forms.ProgressBar();
+            this.lblProgress = new System.Windows.Forms.Label();
+            this.txtLog = new System.Windows.Forms.TextBox();
+            this.organizeBtn = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // directoryChooserBtn
@@ -52,11 +56,55 @@
             this.sourceDirTxtBox.Size = new System.Drawing.Size(1095, 47);
             this.sourceDirTxtBox.TabIndex = 2;
             // 
+            // progressBar
+            // 
+            this.progressBar.Location = new System.Drawing.Point(41, 217);
+            this.progressBar.Name = "progressBar";
+            this.progressBar.Size = new System.Drawing.Size(1572, 58);
+            this.progressBar.TabIndex = 3;
+            // 
+            // lblProgress
+            // 
+            this.lblProgress.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblProgress.BackColor = System.Drawing.Color.Transparent;
+            this.lblProgress.Location = new System.Drawing.Point(1474, 217);
+            this.lblProgress.Name = "lblProgress";
+            this.lblProgress.Size = new System.Drawing.Size(139, 58);
+            this.lblProgress.TabIndex = 4;
+            this.lblProgress.Text = "0%";
+            this.lblProgress.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // txtLog
+            // 
+            this.txtLog.Location = new System.Drawing.Point(43, 320);
+            this.txtLog.Multiline = true;
+            this.txtLog.Name = "txtLog";
+            this.txtLog.ReadOnly = true;
+            this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.txtLog.Size = new System.Drawing.Size(1570, 698);
+            this.txtLog.TabIndex = 5;
+            // 
+            // organizeBtn
+            // 
+            this.organizeBtn.Enabled = false;
+            this.organizeBtn.Location = new System.Drawing.Point(483, 138);
+            this.organizeBtn.Name = "organizeBtn";
+            this.organizeBtn.Size = new System.Drawing.Size(652, 58);
+            this.organizeBtn.TabIndex = 6;
+            this.organizeBtn.Text = "Start";
+            this.organizeBtn.UseVisualStyleBackColor = true;
+            this.organizeBtn.Click += new System.EventHandler(this.organizeBtn_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(17F, 41F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1665, 1095);
+            this.Controls.Add(this.organizeBtn);
+            this.Controls.Add(this.txtLog);
+            this.Controls.Add(this.lblProgress);
+            this.Controls.Add(this.progressBar);
             this.Controls.Add(this.sourceDirTxtBox);
             this.Controls.Add(this.directoryChooserBtn);
             this.Name = "MainForm";
@@ -70,5 +118,9 @@
 
         private Button directoryChooserBtn;
         private TextBox sourceDirTxtBox;
+        private ProgressBar progressBar;
+        private Label lblProgress;
+        private TextBox txtLog;
+        private Button organizeBtn;
     }
 }
