@@ -361,3 +361,33 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+bin/
+obj/
+TestResults/
+
+# Visual Studio cache files
+*.dll.refresh
+*.cache
+*.exe.intermediate.manifest
+*.pidb
+*.log
+*.vspscc
+*.vssscc
+*.jfm
+*.scc
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+
+# Visual Studio editor config
+.editorconfig
+
+# NuGet
+packages/
