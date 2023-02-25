@@ -31,9 +31,10 @@
             this.directoryChooserBtn = new System.Windows.Forms.Button();
             this.sourceDirTxtBox = new System.Windows.Forms.TextBox();
             this.progressBar = new System.Windows.Forms.ProgressBar();
-            this.lblProgress = new System.Windows.Forms.Label();
             this.txtLog = new System.Windows.Forms.TextBox();
             this.organizeBtn = new System.Windows.Forms.Button();
+            this.renameSimilarChecked = new System.Windows.Forms.CheckBox();
+            this.removeEmpty = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // directoryChooserBtn
@@ -63,18 +64,6 @@
             this.progressBar.Size = new System.Drawing.Size(1572, 58);
             this.progressBar.TabIndex = 3;
             // 
-            // lblProgress
-            // 
-            this.lblProgress.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblProgress.BackColor = System.Drawing.Color.Transparent;
-            this.lblProgress.Location = new System.Drawing.Point(1474, 138);
-            this.lblProgress.Name = "lblProgress";
-            this.lblProgress.Size = new System.Drawing.Size(139, 58);
-            this.lblProgress.TabIndex = 4;
-            this.lblProgress.Text = "0%";
-            this.lblProgress.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
             // txtLog
             // 
             this.txtLog.Location = new System.Drawing.Point(43, 320);
@@ -88,26 +77,52 @@
             // organizeBtn
             // 
             this.organizeBtn.Enabled = false;
-            this.organizeBtn.Location = new System.Drawing.Point(483, 138);
+            this.organizeBtn.Location = new System.Drawing.Point(43, 138);
             this.organizeBtn.Name = "organizeBtn";
-            this.organizeBtn.Size = new System.Drawing.Size(652, 58);
+            this.organizeBtn.Size = new System.Drawing.Size(295, 58);
             this.organizeBtn.TabIndex = 6;
             this.organizeBtn.Text = "Start";
             this.organizeBtn.UseVisualStyleBackColor = true;
             this.organizeBtn.Click += new System.EventHandler(this.organizeBtn_Click);
+            // 
+            // renameSimilarChecked
+            // 
+            this.renameSimilarChecked.AutoSize = true;
+            this.renameSimilarChecked.Enabled = false;
+            this.renameSimilarChecked.Location = new System.Drawing.Point(365, 147);
+            this.renameSimilarChecked.Name = "renameSimilarChecked";
+            this.renameSimilarChecked.Size = new System.Drawing.Size(259, 45);
+            this.renameSimilarChecked.TabIndex = 7;
+            this.renameSimilarChecked.Text = "Rename Similar";
+            this.renameSimilarChecked.UseVisualStyleBackColor = true;
+            // 
+            // removeEmpty
+            // 
+            this.removeEmpty.AutoSize = true;
+            this.removeEmpty.Checked = true;
+            this.removeEmpty.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.removeEmpty.Enabled = false;
+            this.removeEmpty.Location = new System.Drawing.Point(652, 147);
+            this.removeEmpty.Name = "removeEmpty";
+            this.removeEmpty.Size = new System.Drawing.Size(405, 45);
+            this.removeEmpty.TabIndex = 8;
+            this.removeEmpty.Text = "Remove Empty Directories";
+            this.removeEmpty.UseVisualStyleBackColor = true;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(17F, 41F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1665, 1095);
+            this.Controls.Add(this.removeEmpty);
+            this.Controls.Add(this.renameSimilarChecked);
             this.Controls.Add(this.organizeBtn);
             this.Controls.Add(this.txtLog);
-            this.Controls.Add(this.lblProgress);
             this.Controls.Add(this.progressBar);
             this.Controls.Add(this.sourceDirTxtBox);
             this.Controls.Add(this.directoryChooserBtn);
             this.Name = "MainForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Media Organizer";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.ResumeLayout(false);
@@ -120,8 +135,9 @@
         private Button directoryChooserBtn;
         private TextBox sourceDirTxtBox;
         private ProgressBar progressBar;
-        private Label lblProgress;
         private TextBox txtLog;
         private Button organizeBtn;
+        private CheckBox renameSimilarChecked;
+        private CheckBox removeEmpty;
     }
 }

@@ -8,15 +8,15 @@ namespace MediaOrganizer
     {
         private static int imageFiles = 0;
         private static int videoFiles = 0;
-        public static async Task OrganizeMediaFiles(string sourceDirectory, Action<int, string> progressCallback, CancellationToken cancellationToken)
+        public static async Task OrganizeMediaFiles(RunConfig runConfig, Action<int, string> progressCallback, CancellationToken cancellationToken)
         {
-            if (!System.IO.Directory.Exists(sourceDirectory))
+            if (!System.IO.Directory.Exists(runConfig.SourceDirectory))
             {
                 progressCallback(0, "Folder does not exist.");
                 return;
             }
 
-            List<string> files = System.IO.Directory.EnumerateFiles(sourceDirectory, "*.*", SearchOption.AllDirectories)
+            List<string> files = System.IO.Directory.EnumerateFiles(runConfig.SourceDirectory, "*.*", SearchOption.AllDirectories)
                 .ToList();
 
             int totalFiles = files.Count;
@@ -25,7 +25,12 @@ namespace MediaOrganizer
 
             foreach (string file in files)
             {
-                ProcessMediaFile(file, sourceDirectory, progressCallback, ref processedFiles, filesPerPercent, cancellationToken);
+                ProcessMediaFile(file, runConfig, progressCallback, ref processedFiles, filesPerPercent, cancellationToken);
+            }
+
+            if (runConfig.RemoveEmptyDirectory)
+            {
+                DeleteEmptyDirectories(runConfig.SourceDirectory);
             }
 
             string logMessage = $"{Environment.NewLine}{Environment.NewLine}-------------------------------------------{Environment.NewLine}" +
@@ -35,7 +40,21 @@ namespace MediaOrganizer
             progressCallback(100, logMessage);
         }
 
-        private static void ProcessMediaFile(string file, string sourceDirectory, Action<int, string> progressCallback, ref int processedFiles, double filesPerPercent, CancellationToken cancellationToken)
+        private static void DeleteEmptyDirectories(string directory)
+        {
+            foreach (string subDirectory in System.IO.Directory.GetDirectories(directory))
+            {
+                DeleteEmptyDirectories(subDirectory);
+            }
+
+            if (System.IO.Directory.GetFiles(directory).Length == 0 &&
+                System.IO.Directory.GetDirectories(directory).Length == 0)
+            {
+                System.IO.Directory.Delete(directory, false);
+            }
+        }
+
+        private static void ProcessMediaFile(string file, RunConfig runConfig, Action<int, string> progressCallback, ref int processedFiles, double filesPerPercent, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -61,25 +80,26 @@ namespace MediaOrganizer
 
             DateTime mediaDate = GetMediaDateFromExifOrFallback(file);
 
-            string destinationDirectory = Path.Combine(sourceDirectory, mediaDate.ToString("yyyy"), mediaDate.ToString("MMMM"));
+            string destinationDirectory = Path.Combine(runConfig.SourceDirectory, mediaDate.ToString("yyyy"), mediaDate.ToString("MMMM"));
             System.IO.Directory.CreateDirectory(destinationDirectory);
 
             string destinationFile = Path.Combine(destinationDirectory, Path.GetFileName(file));
-            if (File.Exists(destinationFile))
+            if (runConfig.RenameSimilar && File.Exists(destinationFile))
             {
                 int suffix = 1;
                 string baseName = Path.GetFileNameWithoutExtension(file);
-                string newFileName = "";
-
                 while (File.Exists(destinationFile))
                 {
-                    newFileName = $"{baseName}_({suffix}){extension}";
+                    string newFileName = $"{baseName}_({suffix}){extension}";
                     destinationFile = Path.Combine(destinationDirectory, newFileName);
                     suffix++;
                 }
             }
 
-            File.Move(file, destinationFile);
+            if (runConfig.RenameSimilar || !File.Exists(destinationFile))
+            {
+                File.Move(file, destinationFile);
+            }
 
             // Update progress and logs
             processedFiles++;

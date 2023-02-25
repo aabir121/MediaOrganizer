@@ -37,6 +37,8 @@ namespace MediaOrganizer
             {
                 sourceDirTxtBox.Text = dialog.SelectedPath;
                 organizeBtn.Enabled = true;
+                renameSimilarChecked.Enabled = true;
+                removeEmpty.Enabled = true;
             }
         }
 
@@ -55,7 +57,7 @@ namespace MediaOrganizer
             progressBar.Style = ProgressBarStyle.Continuous;
 
             Task.Run(() => FileOrganizer.OrganizeMediaFiles(
-                sourceDirTxtBox.Text,
+                GetRunConfiguration(),
                 (percentage, message) => ReportProgress(percentage, message),
                 _cancellationTokenSource.Token))
             .ContinueWith(task => HandleOrganizeMediaFilesCompletion(task), TaskScheduler.FromCurrentSynchronizationContext());
@@ -70,14 +72,26 @@ namespace MediaOrganizer
             }
             else if (task.IsFaulted)
             {
-                MessageBox.Show($"An error occurred during the operation: {task.Exception.InnerException.Message}");
+                MessageBox.Show($"An error occurred during the operation: {task?.Exception?.InnerException?.Message}");
                 ResetUi();
             }
             else
             {
                 MessageBox.Show("Media files organized!");
-                ResetUi();
+                ResetUi(true);
             }
+        }
+
+        private RunConfig GetRunConfiguration()
+        {
+            RunConfig config = new()
+            {
+                SourceDirectory = sourceDirTxtBox.Text,
+                RenameSimilar = renameSimilarChecked.Checked,
+                RemoveEmptyDirectory = removeEmpty.Checked
+            };
+
+            return config;
         }
 
         private void ReportProgress(int percentage, string message)
@@ -85,7 +99,6 @@ namespace MediaOrganizer
             progressBar.Invoke(new Action(() =>
             {
                 progressBar.Value = percentage;
-                lblProgress.Text = $"{percentage}%";
             }));
 
             using (var graphics = progressBar.CreateGraphics())
@@ -110,14 +123,18 @@ namespace MediaOrganizer
             }));
         }
 
-        private void ResetUi()
+        private void ResetUi(bool retainLogs = false)
         {
-            txtLog.Clear();
+            if (!retainLogs)
+            {
+                txtLog.Clear();
+            }
             organizeBtn.Text = "Start";
-            lblProgress.Text = "0%";
             directoryChooserBtn.Enabled = true;
             progressBar.Style = ProgressBarStyle.Blocks;
             progressBar.Value = 0;
+            removeEmpty.Enabled = false;
+            renameSimilarChecked.Enabled = false;
         }
     }
 }
