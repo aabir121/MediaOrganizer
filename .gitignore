@@ -391,3 +391,4 @@ TestResults/
 
 # NuGet
 packages/
+.idea/

@@ -6,8 +6,8 @@ namespace MediaOrganizer
 {
     internal class FileOrganizer
     {
-        private static int imageFiles = 0;
-        private static int videoFiles = 0;
+        private static int _imageFiles = 0;
+        private static int _videoFiles = 0;
         public static async Task OrganizeMediaFiles(RunConfig runConfig, Action<int, string> progressCallback, CancellationToken cancellationToken)
         {
             if (!System.IO.Directory.Exists(runConfig.SourceDirectory))
@@ -16,14 +16,14 @@ namespace MediaOrganizer
                 return;
             }
 
-            List<string> files = System.IO.Directory.EnumerateFiles(runConfig.SourceDirectory, "*.*", SearchOption.AllDirectories)
+            var files = System.IO.Directory.EnumerateFiles(runConfig.SourceDirectory, "*.*", SearchOption.AllDirectories)
                 .ToList();
 
-            int totalFiles = files.Count;
-            int processedFiles = 0;
-            double filesPerPercent = totalFiles / 100.0;
+            var totalFiles = files.Count;
+            var processedFiles = 0;
+            var filesPerPercent = totalFiles / 100.0;
 
-            foreach (string file in files)
+            foreach (var file in files)
             {
                 ProcessMediaFile(file, runConfig, progressCallback, ref processedFiles, filesPerPercent, cancellationToken);
             }
@@ -33,16 +33,16 @@ namespace MediaOrganizer
                 DeleteEmptyDirectories(runConfig.SourceDirectory);
             }
 
-            string logMessage = $"{Environment.NewLine}{Environment.NewLine}-------------------------------------------{Environment.NewLine}" +
-                $"Total Processed Files: {processedFiles}{Environment.NewLine}Image Files: {imageFiles}{Environment.NewLine}Video Files: {videoFiles}";
-            imageFiles = 0;
-            videoFiles = 0;
+            var logMessage = $"{Environment.NewLine}{Environment.NewLine}-------------------------------------------{Environment.NewLine}" +
+                             $"Total Processed Files: {processedFiles}{Environment.NewLine}Image Files: {_imageFiles}{Environment.NewLine}Video Files: {_videoFiles}";
+            _imageFiles = 0;
+            _videoFiles = 0;
             progressCallback(100, logMessage);
         }
 
         private static void DeleteEmptyDirectories(string directory)
         {
-            foreach (string subDirectory in System.IO.Directory.GetDirectories(directory))
+            foreach (var subDirectory in System.IO.Directory.GetDirectories(directory))
             {
                 DeleteEmptyDirectories(subDirectory);
             }
@@ -62,7 +62,7 @@ namespace MediaOrganizer
                 throw new OperationCanceledException(cancellationToken);
             }
 
-            string extension = Path.GetExtension(file);
+            var extension = Path.GetExtension(file);
             if (!IsSupportedFileType(extension))
             {
                 return;
@@ -70,24 +70,24 @@ namespace MediaOrganizer
 
             if (IsImage(extension))
             {
-                imageFiles++;
+                _imageFiles++;
             }
 
             if (IsVideo(extension))
             {
-                videoFiles++;
+                _videoFiles++;
             }
 
-            DateTime mediaDate = GetMediaDateFromExifOrFallback(file);
+            var mediaDate = GetMediaDateFromExifOrFallback(file);
 
-            string destinationDirectory = Path.Combine(runConfig.SourceDirectory, mediaDate.ToString("yyyy"), mediaDate.ToString("MMMM"));
+            var destinationDirectory = Path.Combine(runConfig.SourceDirectory, mediaDate.ToString("yyyy"), mediaDate.ToString("MMMM"));
             System.IO.Directory.CreateDirectory(destinationDirectory);
 
-            string destinationFile = Path.Combine(destinationDirectory, Path.GetFileName(file));
+            var destinationFile = Path.Combine(destinationDirectory, Path.GetFileName(file));
             if (runConfig.RenameSimilar && File.Exists(destinationFile))
             {
-                int suffix = 1;
-                string baseName = Path.GetFileNameWithoutExtension(file);
+                var suffix = 1;
+                var baseName = Path.GetFileNameWithoutExtension(file);
                 while (File.Exists(destinationFile))
                 {
                     string newFileName = $"{baseName}_({suffix}){extension}";
@@ -103,17 +103,17 @@ namespace MediaOrganizer
 
             // Update progress and logs
             processedFiles++;
-            int progressPercentage = (int)Math.Round(processedFiles / filesPerPercent);
-            string logMessage = $"Processed file: {file}";
+            var progressPercentage = (int)Math.Round(processedFiles / filesPerPercent);
+            var logMessage = $"Processed file: {file}";
             progressCallback(progressPercentage, logMessage);
         }
 
-        static bool IsSupportedFileType(string extension)
+        private static bool IsSupportedFileType(string extension)
         {
             return IsImage(extension) || IsVideo(extension);
         }
 
-        static bool IsImage(string extension)
+        private static bool IsImage(string extension)
         {
             switch (extension.ToLower())
             {
@@ -129,7 +129,7 @@ namespace MediaOrganizer
             }
         }
 
-        static bool IsVideo(string extension)
+        private static bool IsVideo(string extension)
         {
             switch (extension.ToLower())
             {
@@ -143,7 +143,7 @@ namespace MediaOrganizer
             }
         }
 
-        public static DateTime GetMediaDateFromExifOrFallback(string filePath)
+        private static DateTime GetMediaDateFromExifOrFallback(string filePath)
         {
             try
             {

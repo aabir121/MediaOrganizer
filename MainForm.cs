@@ -60,7 +60,7 @@ namespace MediaOrganizer
                 GetRunConfiguration(),
                 (percentage, message) => ReportProgress(percentage, message),
                 _cancellationTokenSource.Token))
-            .ContinueWith(task => HandleOrganizeMediaFilesCompletion(task), TaskScheduler.FromCurrentSynchronizationContext());
+            .ContinueWith(HandleOrganizeMediaFilesCompletion, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void HandleOrganizeMediaFilesCompletion(Task task)
