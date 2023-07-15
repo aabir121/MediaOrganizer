@@ -19,7 +19,7 @@ This is a simple media organizer application that helps you organize your media 
 
 ## Installation
 
-1. Clone or download the repository from GitHub: [Media Organizer Repository](https://github.com/your-username/media-organizer)
+1. Clone or download the repository from GitHub: [Media Organizer Repository](https://github.com/aabir121/MediaOrganizer)
 2. Open the solution in Visual Studio.
 3. Build the solution to restore NuGet packages and compile the application.
 
